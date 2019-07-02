@@ -149,7 +149,9 @@ const validator = {
                 continue;
             }
 
-            const result = this.utils.validators[currentRule.validator](value, currentRule.options, currentRule.errors);
+            const result = this.utils.validators[currentRule.validator](
+                value,
+                currentRule.options, element);
 
             if (result) {
                 if (Array.isArray(result)) {
@@ -354,55 +356,103 @@ const validator = {
 
                 return errors;
             },
-            mustNotBeEqual: function (value, options) {},
-            mustBeEqual: function (value, options) {}
+            mustNotBeEqual: function (value, options, element) {
+            },
+            mustBeEqual: function (value, options, element) {}
         },
         traversal: {
-            closest: function(element, tokenOptions) {
-                if (element && element instanceof Element && tokenOptions) {
-                    let newElement = element.parentElement;
+            find: function (elements, tokenOptions) {
+                let elementCollection = [];
 
-                    while (newElement !== null) {
-                        if (newElement.matches(tokenOptions)) {
-                            return [newElement];
+                if (!elements || !elements.length || tokenOptions || typeof tokenOptions !== 'string') {
+                    return elementCollection;
+                }
+
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+
+                    if (element && element instanceof Element) {
+                        elementCollection = Array.prototype.concat.call(elementCollection, element.querySelectorAll(tokenOptions));
+                    }
+                }
+
+                return elementCollection;
+            },
+            closest: function(elements, tokenOptions) {
+                let elementCollection = [];
+
+                if (!elements || !elements.length || tokenOptions) {
+                    return elementCollection;
+                }
+
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+
+                    if (element && element instanceof Element) {
+                        let newElement = element.parentElement;
+
+                        while (newElement !== null) {
+                            if (newElement.matches(tokenOptions)) {
+                                elementCollection = Array.prototype.concat.call(elementCollection, newElement);
+                            } else {
+                                newElement = newElement.parentElement;
+                            }
+                        }
+                    }
+                }
+
+                return elementCollection;
+            },
+            siblings: function (elements, tokenOptions) {
+                let elementCollection = [];
+
+                if (!elements || !elements.length) {
+                    return elementCollection;
+                }
+
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+
+                    if (element && element instanceof Element && tokenOptions) {
+                        const siblings = [];
+                        let sibling = element.parentNode.firstChild;
+
+                        // Loop through each sibling and push to the array
+                        while (sibling !== null) {
+                            if (sibling.nodeType === 1 && sibling !== element && sibling.matches(tokenOptions)) {
+                                siblings.push(sibling);
+                            }
+                            sibling = sibling.nextSibling;
+                        }
+
+                        elementCollection = Array.prototype.concat.call(elementCollection, siblings);
+                    }
+                }
+
+                return elementCollection;
+            },
+            parent: function (elements, tokenOptions) {
+                let elementCollection = [];
+
+                if (!elements || !elements.length) {
+                    return elementCollection;
+                }
+
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+
+                    if (element && element instanceof Element) {
+                        if (tokenOptions) {
+                            if (element.parentElement.matches(tokenOptions)) {
+                                elementCollection = Array.prototype.concat.call(elementCollection, element.parentElement);
+                            }
                         } else {
-                            newElement = newElement.parentElement;
+                            elementCollection = Array.prototype.concat.call(elementCollection, element.parentElement);
                         }
                     }
                 }
 
-                return [element];
-            },
-            siblings: function (element, tokenOptions) {
-                if (element && element instanceof Element && tokenOptions) {
-                    const siblings = [];
-                    let sibling = element.parentNode.firstChild;
-
-                    // Loop through each sibling and push to the array
-                    while (sibling !== null) {
-                        if (sibling.nodeType === 1 && sibling !== element && sibling.matches(tokenOptions)) {
-                            siblings.push(sibling);
-                        }
-                        sibling = sibling.nextSibling;
-                    }
-
-                    return siblings;
-                }
-
-                return [element];
-            },
-            parent: function (element, tokenOptions) {
-                if (element && element instanceof Element) {
-                    if (tokenOptions) {
-                        if (element.parentElement.matches(tokenOptions)) {
-                            return [element.parentElement];
-                        }
-                    } else {
-                        return [element.parentElement];
-                    }
-                }
-
-                return [element];
+                return elementCollection;
             }
         },
         polyfills: {
@@ -446,8 +496,7 @@ const validator = {
             const splitTokens = tokenizedString.split(this._constants.tokenSeparator);
 
             for (let i = 0; i < elements.length; i++) {
-                const currentElement = elements[i];
-                let foundElements;
+                let foundElements = elements[i];
 
                 for (let j = 0; j < splitTokens.length; j++) {
                     const currentToken = splitTokens[j].trim();
@@ -460,15 +509,33 @@ const validator = {
                     if (i % 2 !== 0) {
                         const splitCurrentToken = currentToken.split('@');
 
-                        foundElements = this.utils.traversal[splitCurrentToken[0]](currentElement, splitCurrentToken[1]);
+                        foundElements = this.utils.traversal[splitCurrentToken[0]](foundElements, splitCurrentToken[1]);
                     } else {
-                        foundElements = currentElement.querySelectorAll(currentToken);
+                        foundElements = this.utils.traversal.find(foundElements, currentToken);
                     }
                 }
+
+                elementsPool = Array.prototype.concat.call(elementsPool, foundElements);
             }
 
             return elementsPool;
         },
-        areInputsEqual() {}
+        areInputsEqual(elements) {
+            if (!elements || !elements.length || elements.length < 2) {
+                return false;
+            }
+
+            let previousValue = elements[0];
+
+            for (let i = 1; i < elements.length; i++) {
+                const element = elements[i];
+
+                if (element.value !== previousValue) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 };
