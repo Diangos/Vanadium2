@@ -357,8 +357,47 @@ const validator = {
                 return errors;
             },
             mustNotBeEqual: function (value, options, element) {
+                const errors = [];
+
+                if (!element || !options || !options.targets || typeof options.targets !== 'string') {
+                    return errors;
+                }
+
+                let elements = [];
+
+                for (let i = 0; i < options.targets.length; i++) {
+                    const target = options.targets[i];
+                    const currentTargetElements = this.utils.tokenResolver(element, target);
+
+                    if (currentTargetElements.length) {
+                        elements = elements.concat(currentTargetElements);
+                    } else {
+                        elements.push(currentTargetElements);
+                    }
+                }
+                const areEqual = this.utils.areInputsEqual(elements, options.equalityType);
+
+                if (areEqual) {
+                    errors.push({type: 'areNotEqual'});
+                }
+
+                return errors;
             },
-            mustBeEqual: function (value, options, element) {}
+            mustBeEqual: function (value, options, element) {
+                const errors = [];
+                const newOptions = {
+                    targets: options.targets,
+                    equalityType: options.equalityType === "some" ? "all" : "some"
+                };
+
+                let result = this.mustNotBeEqual(value, newOptions, element);
+
+                if (!result.length) {
+                    errors.push({type: 'mustNotEqual'});
+                }
+
+                return errors;
+            }
         },
         traversal: {
             find: function (elements, tokenOptions) {
@@ -469,6 +508,11 @@ const validator = {
                 }
             }
         },
+        /**
+         * Ensures that whatever is given as a parameter is transformed into something iterate-able
+         * @param {HTMLElement|HTMLElement[]|HTMLCollection} element
+         * @return {HTMLCollection|HTMLElement[]}
+         */
         transformToCollection(element) {
             if (!element) {
                 return [];
@@ -484,6 +528,12 @@ const validator = {
 
             return [];
         },
+        /**
+         * Gets elements starting from a given element via a tokenized path
+         * @param {HTMLElement|HTMLElement[]|HTMLCollection} elements - elements to start searching from
+         * @param {string} tokenizedString - a tokenized path to the input
+         * @return {HTMLElement[]}
+         */
         tokenResolver(elements, tokenizedString) {
             if (!elements || !tokenizedString) {
                 return [elements];
@@ -520,9 +570,19 @@ const validator = {
 
             return elementsPool;
         },
-        areInputsEqual(elements) {
+        /**
+         * Verifies if all or some of the given inputs have the same value
+         * @param {HTMLCollection|HTMLElement[]} elements - the inputs to check that are equal
+         * @param {('all'|'some')} [type='all'] - determines if the function should check that at least 2 or all inputs are equal
+         * @return {boolean}
+         */
+        areInputsEqual(elements, type) {
             if (!elements || !elements.length || elements.length < 2) {
                 return false;
+            }
+
+            if (type !== 'some') {
+                type = 'all';
             }
 
             let previousValue = elements[0];
@@ -531,11 +591,11 @@ const validator = {
                 const element = elements[i];
 
                 if (element.value !== previousValue) {
-                    return false;
+                    return type === 'all';
                 }
             }
 
-            return true;
+            return type !== 'all';
         }
     }
 };
