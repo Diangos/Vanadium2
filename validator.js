@@ -127,7 +127,7 @@ const validator = {
 
     /**
      * Function to validate a given input against a set of rules
-     * @param {Element|EventTarget} element
+     * @param {HTMLInputElement} element
      * @param {ValidationRule} rule?
      */
     validate: function (element, rule) {
