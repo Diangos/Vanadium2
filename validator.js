@@ -27,7 +27,9 @@
  * @prop {string} selector - The selector used to obtain all elements to apply event listeners to
  * @prop {HTMLElementList|HTMLElement} elements - The actual elements the validator will apply event listeners to
  * @prop {string} validateOn - The type of event the validator should bind to
- * @prop {boolean} validationOr - Determines if the validators are applied ANDed or ORed
+ * @prop {function} preValidationFunction - Function to execute before any other validation.
+ * @prop {function} validationFunction - A function that can execute arbitrary validations. Returns string|string[]|object[]
+ * @prop {function} postValidationFunction - Determines if the validators are applied ANDed or ORed
  * @prop {boolean} addMessages - Determines whether to create DOM elements under the validated element and put the error or warning text in them
  * @prop {Validator[]} validators - An array of all the validators to apply with their individual options
  */
@@ -138,6 +140,8 @@ const validator = {
             return;
         }
 
+        // TODO: Run preValidationFunction
+
         const value = element.value;
         const results = [];
 
@@ -175,6 +179,8 @@ const validator = {
         }
 
         // TODO: take into account the `addMessages` property
+
+        // TODO: Run validationFunction and postValidationFunction
 
         return results;
     },

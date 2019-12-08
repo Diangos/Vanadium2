@@ -3,9 +3,11 @@ const validationObject = [{
     elements: document.querySelectorAll('.firstName'),
     validateOn: 'blur',
     addMessages: true,
-    validationOr: true,     // By default, all errors are treated as AND
-    validators: [{
-        generate: 'warning',
+    preValidationFunction: () => {/* Do stuff before validation*/},
+    validationFunction: () => {/* Validate stuff */},
+    postValidationFunction: () => {/* Do stuff after validation*/},
+    validators: [[{
+        generate: 'error',
         validator: 'number',
         options: {
             min: 0,
@@ -29,7 +31,7 @@ const validationObject = [{
             noScientific: false,
             noSpaces: true
         }
-    }, {
+    }], {
         generate: 'warning',
         validator: 'mustBeEqual',
         options: {
