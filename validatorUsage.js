@@ -1,8 +1,10 @@
-const validationObject = [{
+/**
+ *
+ * @type ValidationRule[]
+ */
+const validationRules = [{
     selector: '.firstName',
     elements: document.querySelectorAll('.firstName'),
-    validateOn: 'blur',
-    addMessages: true,
     preValidationFunction: () => {/* Do stuff before validation*/},
     validationFunction: () => {/* Validate stuff */},
     postValidationFunction: () => {/* Do stuff after validation*/},
@@ -44,4 +46,8 @@ const validationObject = [{
     }]
 }];
 
-validator.init(validationObject);
+const validationObject = {
+
+};
+
+validator.init(validationRules, validationObject);

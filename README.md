@@ -1,7 +1,7 @@
 # Vanadium2
-Yet another form validator
+A powerful form validator written in vanilla JS with 0 dependencies. Just pop it into your project and get started. This project is (for now) a work in progress. This means it has limited functionality and is not properly tested.
 
-Initialize with `vanadium.init(validtionObject, validationOptions)`
+Initialize with `vanadium.init(validationObject, validatorConfig)`
 
 ## Validation object properties
 Despite being called an object, the validation object is actually an array of objects. Each object in the array is called and defines *a rule* that Vanadium will apply to one or more inputs (elements).
@@ -82,3 +82,10 @@ Some validators allow you to reference other elements in relation to a selector 
 Tokens are defined by double brackets `{{...}}` (this can be changed, but this is the default) and their structure is two-part with the two parts separated by an `@`. The first part is the function to apply (`closest` in our example) and the second part represents how to apply it, just like a parameter for the function).
 
 Tokenized strings can resolve to multiple elements so you should take care so that only the elements that you want are selected.
+
+## Validator configuration object
+This object is used to change the behaviour of Vanadium2. For example we can use this object to change the token separators from the default `{{` and `}}` to any separator we want. This is described below.
+
+* **tokenSeparator** - A string or RegExp object that determines the separator considered when parsing tokens. The default is `/{{|}}/`.
+* **errorDisplayHandler** - A function that gets called instead of Vanadium2's default function for displaying errors. This function gets called for a rule only if the `addMessage` property is set to true for that rule. Has no default since this is an override.
+* **observeDOM** - A boolean that when set to `true` will listen to changes to the DOM will try to add event listeners to any new inputs that appear on the page (if they correspond to any rules). This is performance intensive (it uses a mutationObserver and runs an init for every input added). The default is `false`.

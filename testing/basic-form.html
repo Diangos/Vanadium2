@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Basic form Vanadium 2 test</title>
+</head>
+<body>
+    <header></header>
+    <main>
+        <form action="">
+            <div>
+                <label for="email">Email</label>
+                <br>
+                <input id="email" type="email"></div>
+            <div>
+                <label for="password">Password</label>
+                <br>
+                <input id="password" type="password"></div>
+            <div>
+                <label for="confirmPassword">Confirm Password</label>
+                <br>
+                <input id="confirmPassword" type="password"></div>
+            <div>
+                <label for="firstName">First Name</label>
+                <br>
+                <input id="firstName" type="text"></div>
+            <div>
+                <label for="lastName">Last Name</label>
+                <br>
+                <input id="lastName" type="text"></div>
+        </form>
+    </main>
+    <footer></footer>
+
+    <script src="./../validator.js" type="application/javascript"></script>
+    <script>
+        const validationObject = [{
+            selector: '#password',
+            validateOn: 'keyup',
+            validators: [{
+                generate: 'warning',
+                validator: 'mustBeEqual',
+                options: {
+                    targets: [
+                        '{{closest@form}} #confirmPassword'
+                    ],
+                    equalityType: 'some'
+                }
+            }]
+        }];
+
+        validator.init(validationObject);
+    </script>
+</body>
+</html>

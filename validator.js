@@ -3,6 +3,7 @@
 /**
  * Vanadium 2
  * Made by Merlas Tudor (Diangos)
+ * https://github.com/Diangos/Vanadium2
  */
 
 /**
@@ -18,20 +19,20 @@
  * @typedef {Object} Validator
  * @prop {boolean} generateWarning
  * @prop {string} validator
- * @prop {object} options
+ * @prop {object} [options]
  * @prop {object} errors
  */
 
 /**
  * @typedef {Object} ValidationRule
- * @prop {string} selector - The selector used to obtain all elements to apply event listeners to
- * @prop {HTMLElementList|HTMLElement} elements - The actual elements the validator will apply event listeners to
- * @prop {string} validateOn - The type of event the validator should bind to
- * @prop {function} preValidationFunction - Function to execute before any other validation.
- * @prop {function} validationFunction - A function that can execute arbitrary validations. Returns string|string[]|object[]
- * @prop {function} postValidationFunction - Determines if the validators are applied ANDed or ORed
- * @prop {boolean} addMessages - Determines whether to create DOM elements under the validated element and put the error or warning text in them
- * @prop {Validator[]} validators - An array of all the validators to apply with their individual options
+ * @prop {string} [selector] - The selector used to obtain all elements to apply event listeners to
+ * @prop {HTMLElementList|HTMLElement} [elements] - The actual elements the validator will apply event listeners to
+ * @prop {string} [validateOn] - The type of event the validator should bind to
+ * @prop {function} [preValidationFunction] - Function to execute before any other validation.
+ * @prop {function} [validationFunction] - A function that can execute arbitrary validations. Returns string|string[]|object[]
+ * @prop {function} [postValidationFunction] - Determines if the validators are applied ANDed or ORed
+ * @prop {boolean} [addMessages = true] - Determines whether to create DOM elements under the validated element and put the error or warning text in them
+ * @prop {Array<Validator>|[Array<Array<Validator>>} validators - An array of all the validators to apply with their individual options
  */
 
 /**
@@ -131,9 +132,10 @@ const validator = {
 
     /**
      * Initializes the validator, adding eventListeners, classes and other stuff
-     * @param {ValidationRule[]} rules
+     * @param {ValidationRule[]} rules - The validation rules to apply to elements
+     * @param {object} [configurationObject] - Configuration options for the validator
      */
-    init: function (rules) {
+    init: function (rules, configurationObject) {
         if (!rules) {
             return;
         }
@@ -155,14 +157,14 @@ const validator = {
                 inputs = rules[i].elements;
             }
 
-            if (!inputs) {
-                console.warn(`Could not find any elements for rule ${i}.
-                Please check that you provided either a correct selector or a proper element or element list`);
+            if (!inputs || !inputs.length) {
+                console.warn(`Could not find any elements for rule ${i}. Please check that you provided either a correct selector or a proper element or element list`);
                 continue;
             }
 
             for (let j = 0; j < inputs.length; j++) {
-                inputs[j].addEventListener(rules[i].validateOn, (event) => {
+                // TODO: extract the 'change' string into a validator constant
+                inputs[j].addEventListener(rules[i].validateOn ? rules[i].validateOn : 'change', (event) => {
                     this.validate(event.target, rules[i]);
                 });
                 inputs[j].setAttribute(this._constants.dataAttribute, i.toString(10));
@@ -421,14 +423,19 @@ const validator = {
             mustNotBeEqual: function (value, options, element) {
                 const errors = [];
 
-                if (!element || !options || !options.targets || typeof options.targets !== 'string') {
+                if (!element || !options || !options.targets || (typeof options.targets !== 'string' && Array.isArray(options.targets))) {
                     return errors;
                 }
 
                 let elements = [];
+                let targets = options.targets;
 
-                for (let i = 0; i < options.targets.length; i++) {
-                    const target = options.targets[i];
+                if (!Array.isArray(targets) && typeof targets === 'string') {
+                    targets = [targets];
+                }
+
+                for (let i = 0; i < targets.length; i++) {
+                    const target = targets[i];
                     const currentTargetElements = this.utils.tokenResolver(element, target);
 
                     if (currentTargetElements.length) {
@@ -597,37 +604,42 @@ const validator = {
          * @return {HTMLElement[]}
          */
         tokenResolver(elements, tokenizedString) {
-            if (!elements || !tokenizedString) {
-                return [elements];
+            if (!elements) {
+                return undefined;
+            }
+
+            if (!tokenizedString) {
+                return elements;
             }
 
             elements = this.utils.transformToCollection(elements);
 
             let elementsPool = [];
 
-            const splitTokens = tokenizedString.split(this._constants.tokenSeparator);
-
             for (let i = 0; i < elements.length; i++) {
-                let foundElements = elements[i];
+                const element = elements[i];
+                const tokenArray = tokenizedString.split(this._constants.tokenSeparator);   // we put this here because we modify the array for each iteration
 
-                for (let j = 0; j < splitTokens.length; j++) {
-                    const currentToken = splitTokens[j].trim();
+                let tempElements = [];
 
-                    if (currentToken === '') {
-                        continue;
-                    }
-
-                    // Tokens can only be odd indices
-                    if (i % 2 !== 0) {
-                        const splitCurrentToken = currentToken.split('@');
-
-                        foundElements = this.utils.traversal[splitCurrentToken[0]](foundElements, splitCurrentToken[1]);
-                    } else {
-                        foundElements = this.utils.traversal.find(foundElements, currentToken);
-                    }
+                if (tokenArray[0] && tokenArray[0].trim() !== '') {
+                    tempElements = this.utils.traversal.find(element, tokenArray[0]);
                 }
 
-                elementsPool = Array.prototype.concat.call(elementsPool, foundElements);
+                if (tokenArray[1] && tokenArray[1].trim() !== '') {
+                    const splitToken = tokenArray[1].split('@');
+
+                    tempElements = this.utils.traversal[splitToken[0]](tempElements, splitToken[1]);
+                }
+
+                const newTokenizedString = tokenizedString.replace(
+                    new RegExp(`${tokenArray[0]}\\s*${this._constants.tokenSeparator}\\s*${tokenArray[1]}\\s*${this._constants.tokenSeparator}`),
+                    ''
+                );
+
+                // TODO: make sure the starting element(s) is(are) not also selected
+                // Or should we make the user be careful for the sake of performance?
+                elementsPool.concat(this.utils.tokenResolver(tempElements, newTokenizedString));
             }
 
             return elementsPool;
