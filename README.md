@@ -59,16 +59,17 @@ const validators = [
             noSpaces: true
         }
     }], {
-    generate: 'warning',
-    validator: 'mustBeEqual',
-    options: {
-        targets: [
-            '{{closest@.bibi}} .gigi',
-            '{{parents@.lulu}} .fifi'
-        ],
-        equalityType: 'some'
+        generate: 'warning',
+        validator: 'mustBeEqual',
+        options: {
+            targets: [
+                '{{closest@.bibi}} .gigi',
+                '{{parents@.lulu}} .fifi'
+            ],
+            equalityType: 'some'
+        }
     }
-}];
+];
 
 console.log(validators);
 ```
