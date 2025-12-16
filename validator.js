@@ -472,7 +472,9 @@ const validator = {
             find: function (elements, tokenOptions) {
                 let elementCollection = [];
 
-                if (!elements || !elements.length || tokenOptions || typeof tokenOptions !== 'string') {
+                elements = validator.utils.transformToCollection(elements);
+
+                if (!elements.length || !tokenOptions || typeof tokenOptions !== 'string') {
                     return elementCollection;
                 }
 
@@ -489,7 +491,9 @@ const validator = {
             closest: function(elements, tokenOptions) {
                 let elementCollection = [];
 
-                if (!elements || !elements.length || tokenOptions) {
+                elements = validator.utils.transformToCollection(elements);
+
+                if (!elements.length || !tokenOptions || typeof tokenOptions !== 'string') {
                     return elementCollection;
                 }
 
@@ -514,7 +518,9 @@ const validator = {
             siblings: function (elements, tokenOptions) {
                 let elementCollection = [];
 
-                if (!elements || !elements.length) {
+                elements = validator.utils.transformToCollection(elements);
+
+                if (!elements.length) {
                     return elementCollection;
                 }
 
@@ -542,7 +548,9 @@ const validator = {
             parent: function (elements, tokenOptions) {
                 let elementCollection = [];
 
-                if (!elements || !elements.length) {
+                elements = validator.utils.transformToCollection(elements);
+
+                if (!elements.length) {
                     return elementCollection;
                 }
 
@@ -556,6 +564,33 @@ const validator = {
                             }
                         } else {
                             elementCollection = Array.prototype.concat.call(elementCollection, element.parentElement);
+                        }
+                    }
+                }
+
+                return elementCollection;
+            },
+            parents: function (elements, tokenOptions) {
+                let elementCollection = [];
+
+                elements = validator.utils.transformToCollection(elements);
+
+                if (!elements.length) {
+                    return elementCollection;
+                }
+
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+
+                    if (element && element instanceof Element) {
+                        let ancestor = element.parentElement;
+
+                        while (ancestor) {
+                            if (!tokenOptions || ancestor.matches(tokenOptions)) {
+                                elementCollection = Array.prototype.concat.call(elementCollection, ancestor);
+                            }
+
+                            ancestor = ancestor.parentElement;
                         }
                     }
                 }
